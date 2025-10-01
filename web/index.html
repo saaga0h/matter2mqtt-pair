@@ -1,0 +1,27 @@
+<!-- matter2mqtt-pair/web/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matter Device Pairing</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+    <h1>Pair Matter Device</h1>
+    
+    <div id="scanner">
+        <div id="qr-reader" style="width: 100%"></div>
+    </div>
+    
+    <form id="pairForm" style="display:none">
+        <input type="text" id="code" placeholder="Pairing code" readonly>
+        <input type="text" id="name" placeholder="Device location/name (e.g., study/presence)">
+        <input type="number" id="nodeId" placeholder="Node ID (12345)" value="12345">
+        <button type="submit">Pair Device</button>
+    </form>
+    
+    <div id="result"></div>
+    
+    <script src="index.js"></script>
+</body>
+</html>
