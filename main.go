@@ -35,6 +35,17 @@ type PairRequest struct {
 	NodeID uint64 `json:"node_id"`
 }
 
+type UnpairRequest struct {
+	NodeID uint64 `json:"node_id"`
+}
+
+type DeviceListItem struct {
+	NodeID      uint64 `json:"node_id"`
+	Topic       string `json:"topic"`
+	Sensitivity string `json:"sensitivity,omitempty"`
+	DebounceMs  int    `json:"debounce_ms,omitempty"`
+}
+
 func getLocalIP() string {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
@@ -56,6 +67,7 @@ func main() {
 	devicesPath := flag.String("devices", "", "Path to devices.yaml")
 	port := flag.Int("port", 8081, "HTTP server port")
 	storagePath := flag.String("storage", "/var/lib/matter2mqtt", "chip-tool storage directory")
+	chipToolPath := flag.String("chip-tool", "chip-tool", "Path to chip-tool binary")
 	useTLS := flag.Bool("tls", false, "Enable HTTPS")
 	certFile := flag.String("cert", "cert.pem", "TLS certificate file")
 	keyFile := flag.String("key", "key.pem", "TLS key file")
@@ -73,19 +85,21 @@ func main() {
 	fmt.Printf("matter2mqtt pairing tool\n")
 	fmt.Printf("Devices file: %s\n", finalDevicesPath)
 	fmt.Printf("Storage path: %s\n", *storagePath)
+	fmt.Printf("chip-tool: %s\n", *chipToolPath)
 	fmt.Printf("\nScan to open:\n")
+	
 	webFS, err := fs.Sub(webFiles, "web")
 	if err != nil {
 		panic(err)
 	}
 
 	http.Handle("/", http.FileServer(http.FS(webFS)))
-	http.HandleFunc("/api/pair", handlePair(finalDevicesPath, *storagePath))
+	http.HandleFunc("/api/pair", handlePair(finalDevicesPath, *storagePath, *chipToolPath))
+	http.HandleFunc("/api/unpair", handleUnpair(finalDevicesPath, *storagePath, *chipToolPath))
+	http.HandleFunc("/api/devices", handleListDevices(finalDevicesPath))
 
 	addr := fmt.Sprintf(":%d", *port)
-
 	localIP := getLocalIP()
-
 	addr = fmt.Sprintf("%s:%d", localIP, *port)
 
 	if *useTLS {
@@ -102,8 +116,13 @@ func main() {
 	}
 }
 
-func handlePair(devicesPath, storagePath string) http.HandlerFunc {
+func handlePair(devicesPath, storagePath, chipToolPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
 		var req PairRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, err.Error(), 400)
@@ -111,7 +130,7 @@ func handlePair(devicesPath, storagePath string) http.HandlerFunc {
 		}
 
 		// Commission with chip-tool
-		cmd := exec.Command("chip-tool", "pairing", "code",
+		cmd := exec.Command(chipToolPath, "pairing", "code",
 			fmt.Sprintf("%d", req.NodeID),
 			req.Code,
 			"--storage-directory", storagePath)
@@ -164,6 +183,156 @@ func handlePair(devicesPath, storagePath string) http.HandlerFunc {
 		json.NewEncoder(w).Encode(map[string]string{
 			"status":  "success",
 			"message": fmt.Sprintf("Device %d commissioned and added to %s. Restart matter2mqtt to activate.", req.NodeID, devicesPath),
+		})
+	}
+}
+
+func handleUnpair(devicesPath, storagePath, chipToolPath string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost && r.Method != http.MethodDelete {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var req UnpairRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+
+		// Unpair with chip-tool
+		cmd := exec.Command(chipToolPath, "pairing", "unpair",
+			fmt.Sprintf("%d", req.NodeID),
+			"--storage-directory", storagePath)
+
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			w.WriteHeader(500)
+			json.NewEncoder(w).Encode(map[string]string{
+				"status":  "error",
+				"message": fmt.Sprintf("Unpairing failed: %s", string(output)),
+			})
+			return
+		}
+
+		// Load existing devices.yaml
+		registry := &DeviceRegistry{
+			Devices: make(map[uint64]DeviceConfig),
+		}
+
+		data, err := os.ReadFile(devicesPath)
+		if err != nil {
+			w.WriteHeader(500)
+			json.NewEncoder(w).Encode(map[string]string{
+				"status":  "error",
+				"message": fmt.Sprintf("Failed to read devices.yaml: %v", err),
+			})
+			return
+		}
+
+		if err := yaml.Unmarshal(data, registry); err != nil {
+			w.WriteHeader(500)
+			json.NewEncoder(w).Encode(map[string]string{
+				"status":  "error",
+				"message": fmt.Sprintf("Failed to parse devices.yaml: %v", err),
+			})
+			return
+		}
+
+		// Remove device from registry
+		if _, exists := registry.Devices[req.NodeID]; !exists {
+			w.WriteHeader(404)
+			json.NewEncoder(w).Encode(map[string]string{
+				"status":  "error",
+				"message": fmt.Sprintf("Device %d not found in devices.yaml", req.NodeID),
+			})
+			return
+		}
+
+		delete(registry.Devices, req.NodeID)
+
+		// Write back
+		newData, err := yaml.Marshal(registry)
+		if err != nil {
+			w.WriteHeader(500)
+			json.NewEncoder(w).Encode(map[string]string{
+				"status":  "error",
+				"message": fmt.Sprintf("Failed to marshal YAML: %v", err),
+			})
+			return
+		}
+
+		if err := os.WriteFile(devicesPath, newData, 0644); err != nil {
+			w.WriteHeader(500)
+			json.NewEncoder(w).Encode(map[string]string{
+				"status":  "error",
+				"message": fmt.Sprintf("Failed to write devices.yaml: %v", err),
+			})
+			return
+		}
+
+		json.NewEncoder(w).Encode(map[string]string{
+			"status":  "success",
+			"message": fmt.Sprintf("Device %d unpaired and removed from %s. Restart matter2mqtt to apply changes.", req.NodeID, devicesPath),
+		})
+	}
+}
+
+func handleListDevices(devicesPath string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Load devices.yaml
+		registry := &DeviceRegistry{
+			Devices: make(map[uint64]DeviceConfig),
+		}
+
+		data, err := os.ReadFile(devicesPath)
+		if err != nil {
+			// If file doesn't exist, return empty list
+			if os.IsNotExist(err) {
+				json.NewEncoder(w).Encode(map[string]interface{}{
+					"status":  "success",
+					"devices": []DeviceListItem{},
+				})
+				return
+			}
+
+			w.WriteHeader(500)
+			json.NewEncoder(w).Encode(map[string]string{
+				"status":  "error",
+				"message": fmt.Sprintf("Failed to read devices.yaml: %v", err),
+			})
+			return
+		}
+
+		if err := yaml.Unmarshal(data, registry); err != nil {
+			w.WriteHeader(500)
+			json.NewEncoder(w).Encode(map[string]string{
+				"status":  "error",
+				"message": fmt.Sprintf("Failed to parse devices.yaml: %v", err),
+			})
+			return
+		}
+
+		// Convert to list format
+		devices := make([]DeviceListItem, 0, len(registry.Devices))
+		for nodeID, config := range registry.Devices {
+			devices = append(devices, DeviceListItem{
+				NodeID:      nodeID,
+				Topic:       config.Topic,
+				Sensitivity: config.Sensitivity,
+				DebounceMs:  config.DebounceMs,
+			})
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status":  "success",
+			"devices": devices,
 		})
 	}
 }
