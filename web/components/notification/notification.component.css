@@ -1,0 +1,228 @@
+/* Notification Component Styles */
+.notifications-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 400px;
+  width: 100%;
+  pointer-events: none;
+}
+
+.notification {
+  background: var(--bg-light);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  pointer-events: auto;
+  transition: all 0.2s ease;
+  /* Remove the slide-in animation from here since it causes re-renders to animate */
+}
+
+/* Only apply slide-in animation to newly added notifications */
+.notification.notification--entering {
+  animation: notificationSlideIn 0.3s ease-out;
+}
+
+.notification:hover {
+  transform: translateY(-1px);
+  box-shadow: 0px 4px 8px oklch(0 0 0 / 0.15), 0px 8px 16px oklch(0 0 0 / 0.1);
+}
+
+.notification__content {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  position: relative;
+}
+
+.notification__icon {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+  opacity: 0.9;
+}
+
+.notification__message {
+  flex: 1;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.notification__close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  opacity: 0.8;
+  font-size: 1.1rem;
+  line-height: 1;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification__close:hover {
+  background: var(--border-muted);
+  color: var(--text);
+  opacity: 1;
+}
+
+.notification__close:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  opacity: 1;
+}
+
+/* Better visibility for error/warning notifications */
+.notification--error .notification__close,
+.notification--warning .notification__close {
+  opacity: 0.9;
+  color: var(--text);
+}
+
+.notification--error .notification__close:hover,
+.notification--warning .notification__close:hover {
+  background: oklch(0 0 0 / 0.1);
+  opacity: 1;
+}
+
+/* Notification Type Styles */
+.notification--success {
+  border-left: 4px solid var(--success);
+}
+
+.notification--success .notification__icon {
+  color: var(--success);
+}
+
+.notification--info {
+  border-left: 4px solid var(--info);
+}
+
+.notification--info .notification__icon {
+  color: var(--info);
+}
+
+.notification--warning {
+  border-left: 4px solid var(--warning);
+  background: color-mix(in oklch, var(--bg-light), var(--warning) 3%);
+}
+
+.notification--warning .notification__icon {
+  color: var(--warning);
+}
+
+.notification--error {
+  border-left: 4px solid var(--danger);
+  background: color-mix(in oklch, var(--bg-light), var(--danger) 3%);
+}
+
+.notification--error .notification__icon {
+  color: var(--danger);
+}
+
+/* Animations */
+@keyframes notificationSlideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.notification--removing {
+  animation: notificationSlideOut 0.3s ease-in forwards;
+}
+
+@keyframes notificationSlideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+    max-height: 200px;
+    margin-bottom: 0.5rem;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+    max-height: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+/* Auto-close animation for success/info */
+.notification--auto-closing::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  animation: notificationProgress var(--auto-close-duration, 4s) linear;
+}
+
+@keyframes notificationProgress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .notifications-container {
+    top: 0.5rem;
+    right: 0.5rem;
+    left: 0.5rem;
+    max-width: none;
+  }
+  
+  .notification__content {
+    padding: 0.875rem;
+  }
+  
+  .notification__message {
+    font-size: 0.8125rem;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .notification {
+    animation: none;
+  }
+  
+  .notification--removing {
+    animation: notificationFadeOut 0.2s ease-in forwards;
+  }
+  
+  @keyframes notificationFadeOut {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+}

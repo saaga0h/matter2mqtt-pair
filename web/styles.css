@@ -1,64 +1,165 @@
 :root {
   /* hsl (fallback color) */
-  --bg-dark: hsl(234 100% 5%);
-  --bg: hsl(221 100% 7%);
-  --bg-light: hsl(213 100% 10%);
-  --text: hsl(212 100% 98%);
-  --text-muted: hsl(212 77% 72%);
-  --highlight: hsl(209 81% 38%);
-  --border: hsl(206 100% 24%);
-  --border-muted: hsl(211 100% 17%);
-  --primary: hsl(211 100% 72%);
-  --secondary: hsl(35 78% 57%);
-  --danger: hsl(8 74% 66%);
-  --warning: hsl(52 76% 40%);
-  --success: hsl(154 54% 47%);
-  --info: hsl(217 87% 69%);
+  --bg-dark: hsl(336 0% 1%);
+  --bg: hsl(300 0% 4%);
+  --bg-light: hsl(0 0% 9%);
+  --text: hsl(300 0% 95%);
+  --text-muted: hsl(300 0% 69%);
+  --highlight: hsl(330 0% 39%);
+  --border: hsl(0 0% 28%);
+  --border-muted: hsl(300 0% 18%);
+  --primary: hsl(214 78% 73%);
+  --secondary: hsl(35 58% 62%);
+  --danger: hsl(9 26% 64%);
+  --warning: hsl(52 19% 57%);
+  --success: hsl(146 17% 59%);
+  --info: hsl(217 28% 65%);
   /* oklch */
-  --bg-dark: oklch(0.1 0.07 252);
-  --bg: oklch(0.15 0.07 252);
-  --bg-light: oklch(0.2 0.07 252);
-  --text: oklch(0.96 0.1 252);
-  --text-muted: oklch(0.76 0.1 252);
-  --highlight: oklch(0.5 0.14 252);
-  --border: oklch(0.4 0.14 252);
-  --border-muted: oklch(0.3 0.14 252);
-  --primary: oklch(0.76 0.14 252);
-  --secondary: oklch(0.76 0.14 72);
-  --danger: oklch(0.7 0.14 30);
-  --warning: oklch(0.7 0.14 100);
-  --success: oklch(0.7 0.14 160);
-  --info: oklch(0.7 0.14 260);
+  --bg-dark: oklch(0.1 0 255);
+  --bg: oklch(0.15 0 255);
+  --bg-light: oklch(0.2 0 255);
+  --text: oklch(0.96 0 255);
+  --text-muted: oklch(0.76 0 255);
+  --highlight: oklch(0.5 0 255);
+  --border: oklch(0.4 0 255);
+  --border-muted: oklch(0.3 0 255);
+  --primary: oklch(0.76 0.1 255);
+  --secondary: oklch(0.76 0.1 75);
+  --danger: oklch(0.7 0.05 30);
+  --warning: oklch(0.7 0.05 100);
+  --success: oklch(0.7 0.05 160);
+  --info: oklch(0.7 0.05 260);
+  --gradient: linear-gradient(0deg, var(--bg) 97%, var(--bg-light));
+  --gradient-hover:linear-gradient(0deg, var(--bg), var(--bg-light));
+  --shadow: 0px 2px 2px oklch(0 0 0 / 0.2), 0px 4px 4px oklch(0 0 0 / 0.1)
 }
 body.light {
   /* hsl (fallback color) */
-  --bg-dark: hsl(212 100% 92%);
-  --bg: hsl(212 100% 97%);
-  --bg-light: hsl(212 100% 100%);
-  --text: hsl(240 100% 12%);
-  --text-muted: hsl(206 100% 24%);
-  --highlight: hsl(212 100% 100%);
-  --border: hsl(211 62% 52%);
-  --border-muted: hsl(211 86% 65%);
-  --primary: hsl(206 100% 24%);
-  --secondary: hsl(36 100% 15%);
-  --danger: hsl(7 55% 41%);
-  --warning: hsl(53 100% 14%);
-  --success: hsl(161 100% 15%);
-  --info: hsl(217 58% 44%);
+  --bg-dark: hsl(0 0% 90%);
+  --bg: hsl(300 0% 95%);
+  --bg-light: hsl(300 50% 100%);
+  --text: hsl(300 0% 4%);
+  --text-muted: hsl(0 0% 28%);
+  --highlight: hsl(300 50% 100%);
+  --border: hsl(NaN 0% 50%);
+  --border-muted: hsl(340 0% 62%);
+  --primary: hsl(213 62% 30%);
+  --secondary: hsl(40 100% 16%);
+  --danger: hsl(9 21% 41%);
+  --warning: hsl(52 23% 34%);
+  --success: hsl(147 19% 36%);
+  --info: hsl(217 22% 41%);
   /* oklch */
-  --bg-dark: oklch(0.92 0.07 252);
-  --bg: oklch(0.96 0.07 252);
-  --bg-light: oklch(1 0.07 252);
-  --text: oklch(0.15 0.14 252);
-  --text-muted: oklch(0.4 0.14 252);
-  --highlight: oklch(1 0.14 252);
-  --border: oklch(0.6 0.14 252);
-  --border-muted: oklch(0.7 0.14 252);
-  --primary: oklch(0.4 0.14 252);
-  --secondary: oklch(0.4 0.14 72);
-  --danger: oklch(0.5 0.14 30);
-  --warning: oklch(0.5 0.14 100);
-  --success: oklch(0.5 0.14 160);
-  --info: oklch(0.5 0.14 260);
+  --bg-dark: oklch(0.92 0 255);
+  --bg: oklch(0.96 0 255);
+  --bg-light: oklch(1 0 255);
+  --text: oklch(0.15 0 255);
+  --text-muted: oklch(0.4 0 255);
+  --highlight: oklch(1 0 255);
+  --border: oklch(0.6 0 255);
+  --border-muted: oklch(0.7 0 255);
+  --primary: oklch(0.4 0.1 255);
+  --secondary: oklch(0.4 0.1 75);
+  --danger: oklch(0.5 0.05 30);
+  --warning: oklch(0.5 0.05 100);
+  --success: oklch(0.5 0.05 160);
+    --info: oklch(0.5 0.14 260);
+}
+
+/* Dialog Styles */
+.dialog {
+  border: none;
+  background: transparent;
+  padding: 0;
+  max-width: 90vw;
+  max-height: 90vh;
+  margin: 1rem auto 0 auto;
+}
+
+.dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+[data-component="dialog-content"] {
+  background: var(--bg-light);
+  border: 1px solid var(--border-muted);
+  border-radius: 8px;
+  overflow: hidden;
+  min-width: 400px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-muted);
+  background: var(--bg);
+}
+
+.dialog-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.dialog-close {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  border-radius: 4px;
+  width: auto;
+}
+
+.dialog-close:hover {
+  background: var(--highlight);
+  color: var(--text);
+}
+
+.dialog-close svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.dialog-body {
+  padding: 1.5rem;
+  color: var(--text);
+}
+
+.dialog-body p {
+  margin: 0 0 1rem 0;
+}
+
+.dialog-body p:last-child {
+  margin-bottom: 0;
+}
+
+.dialog-footer {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding: 1.5rem;
+  border-top: 1px solid var(--border-muted);
+  background: var(--bg);
+}
+
+@media (max-width: 480px) {
+  [data-component="dialog-content"] {
+    min-width: 0;
+    width: 100%;
+    margin: 1rem;
+  }
+  
+  .dialog-footer {
+    flex-direction: column;
+  }
+  
+  .dialog-footer button {
+    width: 100%;
+  }
+}
 }

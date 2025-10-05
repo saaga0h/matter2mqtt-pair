@@ -73,6 +73,8 @@ func main() {
 	useTLS := flag.Bool("tls", false, "Enable HTTPS")
 	certFile := flag.String("cert", "", "TLS certificate file")
 	keyFile := flag.String("key", "", "TLS key file")
+	noQR := flag.Bool("no-qr", false, "Disable QR code output")
+
 	flag.Parse()
 
 	// Helper to get string config: CLI flag > env var > default
@@ -123,8 +125,7 @@ func main() {
 	fmt.Printf("Devices file: %s\n", finalDevicesPath)
 	fmt.Printf("Storage path: %s\n", finalStoragePath)
 	fmt.Printf("chip-tool: %s\n", finalChipToolPath)
-	fmt.Printf("\nScan to open:\n")
-	
+
 	webFS, err := fs.Sub(webFiles, "web")
 	if err != nil {
 		panic(err)
@@ -141,13 +142,19 @@ func main() {
 
 	if finalUseTLS {
 		url := fmt.Sprintf("https://%s", addr)
-		qrterminal.Generate(url, qrterminal.L, os.Stdout)
-		fmt.Printf("\n\nOr point your browser to %s\n", url)
+		if !*noQR {
+			fmt.Printf("\nScan to open:\n")
+			qrterminal.Generate(url, qrterminal.L, os.Stdout)
+		}
+		fmt.Printf("\n\nPoint your browser to %s\n", url)
 		http.ListenAndServeTLS(addr, finalCertFile, finalKeyFile, nil)
 	} else {
 		url := fmt.Sprintf("http://%s", addr)
-		qrterminal.Generate(url, qrterminal.L, os.Stdout)
-		fmt.Printf("\n\nOr point your browser to %s\n", url)
+		if !*noQR {
+			fmt.Printf("\nScan to open:\n")
+			qrterminal.Generate(url, qrterminal.L, os.Stdout)
+		}
+		fmt.Printf("\n\nPoint your browser to %s\n", url)
 		fmt.Println("Note: Camera requires HTTPS on iOS (use --tls)")
 		http.ListenAndServe(addr, nil)
 	}
@@ -155,9 +162,9 @@ func main() {
 
 func parseChipToolUnpairError(output string) string {
 	outputLower := strings.ToLower(output)
-	
-	if strings.Contains(outputLower, "not found") || 
-	   strings.Contains(outputLower, "no device") {
+
+	if strings.Contains(outputLower, "not found") ||
+		strings.Contains(outputLower, "no device") {
 		return "Device not found. It may already be unpaired."
 	}
 	if strings.Contains(outputLower, "timeout") {
@@ -166,19 +173,19 @@ func parseChipToolUnpairError(output string) string {
 	if strings.Contains(outputLower, "not commissioned") {
 		return "Device is not paired to this controller."
 	}
-	
+
 	return "Unpair failed. Device may be offline or already unpaired."
 }
 
 func parseChipToolError(output string) string {
 	outputLower := strings.ToLower(output)
-	
+
 	// Check for common error patterns
 	if strings.Contains(outputLower, "integrity check failed") {
 		return "Invalid pairing code format. Please check the QR code or manual pairing code."
 	}
-	if strings.Contains(outputLower, "device discovery timed out") || 
-	   strings.Contains(outputLower, "no devices found") {
+	if strings.Contains(outputLower, "device discovery timed out") ||
+		strings.Contains(outputLower, "no devices found") {
 		return "Device not found. Make sure the device is powered on and in pairing mode."
 	}
 	if strings.Contains(outputLower, "failed to establish pase") {
@@ -193,7 +200,7 @@ func parseChipToolError(output string) string {
 	if strings.Contains(outputLower, "invalid discriminator") {
 		return "Invalid pairing code. Please verify the code from your device."
 	}
-	
+
 	// If no specific error matched, provide generic but helpful message
 	return "Pairing failed. Check that the device is in pairing mode and the code is correct."
 }
@@ -223,7 +230,7 @@ func handlePair(devicesPath, storagePath, chipToolPath string) http.HandlerFunc 
 			fmt.Printf("ERROR: chip-tool pairing failed\n")
 			fmt.Printf("Command: %s\n", cmd.String())
 			fmt.Printf("Output:\n%s\n", string(output))
-			
+
 			// Return user-friendly error
 			errorMsg := parseChipToolError(string(output))
 			w.WriteHeader(500)
@@ -290,7 +297,7 @@ func handleUnpair(devicesPath, storagePath, chipToolPath string) http.HandlerFun
 		}
 
 		// Unpair with chip-tool
-	cmd := exec.Command(chipToolPath, "pairing", "unpair",
+		cmd := exec.Command(chipToolPath, "pairing", "unpair",
 			fmt.Sprintf("%d", req.NodeID),
 			"--storage-directory", storagePath)
 
@@ -300,7 +307,7 @@ func handleUnpair(devicesPath, storagePath, chipToolPath string) http.HandlerFun
 			fmt.Printf("ERROR: chip-tool unpair failed\n")
 			fmt.Printf("Command: %s\n", cmd.String())
 			fmt.Printf("Output:\n%s\n", string(output))
-			
+
 			// Return user-friendly error
 			errorMsg := parseChipToolUnpairError(string(output))
 			w.WriteHeader(500)

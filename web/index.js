@@ -1,42 +1,64 @@
-// matter2mqtt-pair/web/app.js
-const scanner = new Html5QrcodeScanner("qr-reader", { 
-    fps: 10, 
-    qrbox: 250 
-});
+import {
+  BehaviorSubject,
+  combineLatest,
+} from "rxjs"
+import { mount } from "./core/framework.js"
+import { select } from "./core/dom.js"
+import { dialog } from "./core/dialog.js"
+import { loadDevices } from "./tranforms/devices.transforms.js"
+import { deviceListComponent } from "./components/device-list/device-list.component.js"
+import { notificationComponent } from "./components/notification/notification.component.js"
+import { actionsComponent } from "./components/actions/actions.component.js"
 
-scanner.render((decodedText) => {
-    // Extract pairing code from QR
-    document.getElementById('code').value = decodedText;
-    document.getElementById('scanner').style.display = 'none';
-    document.getElementById('pairForm').style.display = 'block';
-    scanner.clear();
-});
+// Streams at the edges
+const devices$ = new BehaviorSubject([])
+const notifications$ = new BehaviorSubject([])
 
-document.getElementById('pairForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const data = {
-        code: document.getElementById('code').value,
-        name: document.getElementById('name').value,
-        node_id: parseInt(document.getElementById('nodeId').value)
-    };
-    
-    const response = await fetch('/api/pair', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
-    });
-    
-    const result = await response.json();
-    
-    if (result.status === 'success') {
-        document.getElementById('result').innerHTML = `
-            <h2>Success!</h2>
-            <p>Add this to devices.yaml:</p>
-            <pre>${result.yaml}</pre>
-            <p>Then restart matter2mqtt</p>
-        `;
-    } else {
-        document.getElementById('result').innerHTML = `<p>Error: ${result.message}</p>`;
-    }
-});
+/**
+  Data orchestration
+*/
+const initializeDataFlow = () => {
+  // Load devices on startup
+  loadDevices(devices$, notifications$).subscribe()
+}
+
+/**
+  UI orchestration
+*/
+const initializeUI = () => {
+  // Mount actions component
+  mount(
+    select("#actions-container"),
+    actionsComponent({ devices$, notifications$ })
+  )
+  
+  // Mount notifications when they change
+  combineLatest([notifications$]).subscribe(([notifications]) => {
+    mount(
+      select("#notifications-container") || document.body,
+      notificationComponent(notifications, { notifications$ })
+    )
+  })
+  
+  // Mount device list when devices change
+  combineLatest([devices$]).subscribe(([devices]) => {
+    mount(
+      select("#devices-container"),
+      deviceListComponent(devices, {
+        devices$,
+        notifications$,
+        onPair: () => window.location.href = 'pair.html',
+        onUnpair: (device) => console.log('Unpair device:', device)
+      })
+    )
+  })
+}
+
+/**
+  App bootstrap
+*/
+document.addEventListener("DOMContentLoaded", () => {
+  dialog.init()
+  initializeDataFlow()
+  initializeUI()
+})
