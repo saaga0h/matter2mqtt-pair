@@ -1,27 +1,446 @@
-<!-- matter2mqtt-pair/web/index.html -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matter Device Pairing</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <title>matter2mqtt - Device Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid #333;
+            padding-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 300;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        button {
+            background: #1a1a1a;
+            color: #e0e0e0;
+            border: 1px solid #333;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #252525;
+            border-color: #555;
+        }
+
+        button.primary {
+            background: #0066cc;
+            border-color: #0066cc;
+        }
+
+        button.primary:hover {
+            background: #0052a3;
+        }
+
+        button.danger {
+            background: #cc0000;
+            border-color: #cc0000;
+        }
+
+        button.danger:hover {
+            background: #a30000;
+        }
+
+        .devices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .device-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: border-color 0.2s;
+        }
+
+        .device-card:hover {
+            border-color: #555;
+        }
+
+        .device-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .device-topic {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .device-node {
+            background: #252525;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .device-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #252525;
+        }
+
+        .device-detail {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+
+        .detail-label {
+            color: #888;
+        }
+
+        .detail-value {
+            color: #e0e0e0;
+        }
+
+        .device-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .device-actions button {
+            flex: 1;
+            padding: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #666;
+        }
+
+        .empty-state h2 {
+            font-size: 1.5rem;
+            font-weight: 300;
+            margin-bottom: 1rem;
+        }
+
+        .status-message {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .status-message.show {
+            display: block;
+        }
+
+        .status-message.success {
+            background: #1a3a1a;
+            border: 1px solid #2a5a2a;
+            color: #5afa5a;
+        }
+
+        .status-message.error {
+            background: #3a1a1a;
+            border: 1px solid #5a2a2a;
+            color: #fa5a5a;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+            font-weight: 400;
+        }
+
+        .modal-body {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .devices-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Pair Matter Device</h1>
-    
-    <div id="scanner">
-        <div id="qr-reader" style="width: 100%"></div>
+    <div class="container">
+        <header>
+            <h1>matter2mqtt</h1>
+            <p class="subtitle">Device Management</p>
+        </header>
+
+        <div id="status-message" class="status-message"></div>
+
+        <div class="actions">
+            <button class="primary" onclick="location.href='pair.html'">
+                + Pair New Device
+            </button>
+            <button onclick="loadDevices()">
+                ↻ Refresh
+            </button>
+        </div>
+
+        <div id="devices-container" class="loading">
+            Loading devices...
+        </div>
     </div>
-    
-    <form id="pairForm" style="display:none">
-        <input type="text" id="code" placeholder="Pairing code" readonly>
-        <input type="text" id="name" placeholder="Device location/name (e.g., study/presence)">
-        <input type="number" id="nodeId" placeholder="Node ID (12345)" value="12345">
-        <button type="submit">Pair Device</button>
-    </form>
-    
-    <div id="result"></div>
-    
-    <script src="index.js"></script>
+
+    <!-- Unpair Confirmation Modal -->
+    <div id="unpair-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Unpair Device</h2>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to unpair <strong id="unpair-device-name"></strong>?</p>
+                <p style="color: #888; font-size: 0.9rem; margin-top: 1rem;">
+                    This will remove the device from devices.yaml and unpair it from the Matter fabric.
+                    You'll need to restart matter2mqtt for changes to take effect.
+                </p>
+            </div>
+            <div class="modal-actions">
+                <button onclick="closeUnpairModal()">Cancel</button>
+                <button class="danger" onclick="confirmUnpair()">Unpair Device</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUnpairDevice = null;
+
+        async function loadDevices() {
+            const container = document.getElementById('devices-container');
+            container.className = 'loading';
+            container.textContent = 'Loading devices...';
+
+            try {
+                const response = await fetch('/api/devices');
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    renderDevices(data.devices);
+                } else {
+                    showError('Failed to load devices: ' + data.message);
+                }
+            } catch (error) {
+                showError('Failed to connect to server: ' + error.message);
+            }
+        }
+
+        function renderDevices(devices) {
+            const container = document.getElementById('devices-container');
+
+            if (!devices || devices.length === 0) {
+                container.className = 'empty-state';
+                container.innerHTML = `
+                    <h2>No Devices Yet</h2>
+                    <p>Pair your first Matter device to get started</p>
+                    <button class="primary" onclick="location.href='pair.html'" style="margin-top: 1rem;">
+                        + Pair New Device
+                    </button>
+                `;
+                return;
+            }
+
+            container.className = 'devices-grid';
+            container.innerHTML = devices.map(device => `
+                <div class="device-card">
+                    <div class="device-header">
+                        <div class="device-topic">${escapeHtml(device.topic)}</div>
+                        <div class="device-node">Node ${device.node_id}</div>
+                    </div>
+                    <div class="device-details">
+                        ${device.sensitivity ? `
+                            <div class="device-detail">
+                                <span class="detail-label">Sensitivity</span>
+                                <span class="detail-value">${escapeHtml(device.sensitivity)}</span>
+                            </div>
+                        ` : ''}
+                        ${device.debounce_ms ? `
+                            <div class="device-detail">
+                                <span class="detail-label">Debounce</span>
+                                <span class="detail-value">${device.debounce_ms}ms</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="device-actions">
+                        <button onclick="editDevice(${device.node_id})">Edit</button>
+                        <button class="danger" onclick="unpairDevice(${device.node_id}, '${escapeHtml(device.topic)}')">Unpair</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function unpairDevice(nodeId, topic) {
+            currentUnpairDevice = { nodeId, topic };
+            document.getElementById('unpair-device-name').textContent = topic;
+            document.getElementById('unpair-modal').classList.add('show');
+        }
+
+        function closeUnpairModal() {
+            document.getElementById('unpair-modal').classList.remove('show');
+            currentUnpairDevice = null;
+        }
+
+        async function confirmUnpair() {
+            if (!currentUnpairDevice) return;
+
+            const { nodeId, topic } = currentUnpairDevice;
+            closeUnpairModal();
+
+            try {
+                const response = await fetch('/api/unpair', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ node_id: nodeId })
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    showSuccess(`Device "${topic}" unpaired successfully. Restart matter2mqtt to apply changes.`);
+                    loadDevices();
+                } else {
+                    showError('Failed to unpair device: ' + data.message);
+                }
+            } catch (error) {
+                showError('Failed to unpair device: ' + error.message);
+            }
+        }
+
+        function editDevice(nodeId) {
+            // TODO: Implement device editing
+            showInfo('Device editing coming soon!');
+        }
+
+        function showSuccess(message) {
+            showMessage(message, 'success');
+        }
+
+        function showError(message) {
+            showMessage(message, 'error');
+        }
+
+        function showInfo(message) {
+            showMessage(message, 'success');
+        }
+
+        function showMessage(message, type) {
+            const messageEl = document.getElementById('status-message');
+            messageEl.textContent = message;
+            messageEl.className = `status-message ${type} show`;
+            
+            setTimeout(() => {
+                messageEl.classList.remove('show');
+            }, 5000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load devices on page load
+        loadDevices();
+    </script>
 </body>
 </html>

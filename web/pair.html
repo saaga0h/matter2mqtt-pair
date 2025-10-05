@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pair Device - matter2mqtt</title>
+    <style src="styles.css"></style>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #333;
+            padding-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 300;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link {
+            color: #0066cc;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .section {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section h2 {
+            font-size: 1.2rem;
+            font-weight: 400;
+            margin-bottom: 1rem;
+            color: #fff;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 0.75rem;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: #e0e0e0;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #0066cc;
+        }
+
+        input::placeholder {
+            color: #555;
+        }
+
+        button {
+            width: 100%;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            border: 1px solid #333;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #252525;
+            border-color: #555;
+        }
+
+        button.primary {
+            background: #0066cc;
+            border-color: #0066cc;
+        }
+
+        button.primary:hover {
+            background: #0052a3;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #video {
+            width: 100%;
+            border-radius: 4px;
+            background: #000;
+            margin-bottom: 1rem;
+        }
+
+        .camera-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .camera-controls button {
+            flex: 1;
+        }
+
+        .status-message {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .status-message.show {
+            display: block;
+        }
+
+        .status-message.success {
+            background: #1a3a1a;
+            border: 1px solid #2a5a2a;
+            color: #5afa5a;
+        }
+
+        .status-message.error {
+            background: #3a1a1a;
+            border: 1px solid #5a2a2a;
+            color: #fa5a5a;
+        }
+
+        .status-message.info {
+            background: #1a2a3a;
+            border: 1px solid #2a3a5a;
+            color: #5a9afa;
+        }
+
+        .help-text {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        .code-display {
+            background: #0a0a0a;
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            margin-top: 0.5rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .section {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="index.html" class="back-link">← Back to Devices</a>
+            <h1>Pair New Device</h1>
+        </header>
+
+        <div id="status-message" class="status-message"></div>
+
+        <!-- QR Code Scanner Section -->
+        <div class="section">
+            <h2>1. Scan QR Code</h2>
+            <video id="video" style="display: none;"></video>
+            <div class="camera-controls">
+                <button id="start-camera" class="primary">Start Camera</button>
+                <button id="stop-camera" style="display: none;">Stop Camera</button>
+            </div>
+            <p class="help-text">
+                Point your camera at the Matter QR code on your device. The pairing code will be extracted automatically.
+            </p>
+        </div>
+
+        <!-- Manual Entry Section -->
+        <div class="section">
+            <h2>2. Enter Pairing Details</h2>
+            <form id="pair-form">
+                <div class="form-group">
+                    <label for="code">Pairing Code *</label>
+                    <input 
+                        type="text" 
+                        id="code" 
+                        name="code" 
+                        placeholder="MT:Y.K9042C00KA0648G00" 
+                        required
+                    >
+                    <p class="help-text">
+                        Format: MT:Y.K9042C00KA0648G00 (from QR code or device label)
+                    </p>
+                </div>
+
+                <div class="form-group">
+                    <label for="name">Device Name/Topic *</label>
+                    <input 
+                        type="text" 
+                        id="name" 
+                        name="name" 
+                        placeholder="motion/living-room" 
+                        required
+                    >
+                    <p class="help-text">
+                        This will be the MQTT topic prefix for the device
+                    </p>
+                </div>
+
+                <div class="form-group">
+                    <label for="node_id">Node ID *</label>
+                    <input 
+                        type="number" 
+                        id="node_id" 
+                        name="node_id" 
+                        placeholder="1" 
+                        min="1" 
+                        required
+                    >
+                    <p class="help-text">
+                        Unique identifier for this device (1, 2, 3, etc.)
+                    </p>
+                </div>
+
+                <button type="submit" class="primary" id="pair-button">
+                    Pair Device
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script>
+        const video = document.getElementById('video');
+        const startButton = document.getElementById('start-camera');
+        const stopButton = document.getElementById('stop-camera');
+        const codeInput = document.getElementById('code');
+        const form = document.getElementById('pair-form');
+        const pairButton = document.getElementById('pair-button');
+
+        let stream = null;
+        let scanning = false;
+
+        startButton.addEventListener('click', async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+                video.srcObject = stream;
+                video.style.display = 'block';
+                video.play();
+                startButton.style.display = 'none';
+                stopButton.style.display = 'block';
+                scanning = true;
+                scanQRCode();
+                showInfo('Camera started. Point at QR code...');
+            } catch (error) {
+                showError('Failed to start camera: ' + error.message);
+            }
+        });
+
+        stopButton.addEventListener('click', () => {
+            stopCamera();
+        });
+
+        function stopCamera() {
+            scanning = false;
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            video.style.display = 'none';
+            startButton.style.display = 'block';
+            stopButton.style.display = 'none';
+        }
+
+        function scanQRCode() {
+            if (!scanning) return;
+
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.height = video.videoHeight;
+                canvas.width = video.videoWidth;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                
+                if (code) {
+                    codeInput.value = code.data;
+                    showSuccess('QR code scanned successfully!');
+                    stopCamera();
+                    return;
+                }
+            }
+            
+            requestAnimationFrame(scanQRCode);
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                code: codeInput.value.trim(),
+                name: document.getElementById('name').value.trim(),
+                node_id: parseInt(document.getElementById('node_id').value)
+            };
+
+            if (!formData.code || !formData.name || !formData.node_id) {
+                showError('Please fill in all required fields');
+                return;
+            }
+
+            pairButton.disabled = true;
+            pairButton.textContent = 'Pairing...';
+            showInfo('Commissioning device with chip-tool...');
+
+            try {
+                const response = await fetch('/api/pair', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    showSuccess(data.message);
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                } else {
+                    showError(data.message);
+                    pairButton.disabled = false;
+                    pairButton.textContent = 'Pair Device';
+                }
+            } catch (error) {
+                showError('Failed to pair device: ' + error.message);
+                pairButton.disabled = false;
+                pairButton.textContent = 'Pair Device';
+            }
+        });
+
+        function showSuccess(message) {
+            showMessage(message, 'success');
+        }
+
+        function showError(message) {
+            showMessage(message, 'error');
+        }
+
+        function showInfo(message) {
+            showMessage(message, 'info');
+        }
+
+        function showMessage(message, type) {
+            const messageEl = document.getElementById('status-message');
+            messageEl.textContent = message;
+            messageEl.className = `status-message ${type} show`;
+            
+            if (type !== 'info') {
+                setTimeout(() => {
+                    messageEl.classList.remove('show');
+                }, 5000);
+            }
+        }
+
+        // Suggest next available node ID
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch('/api/devices');
+                const data = await response.json();
+                
+                if (data.status === 'success' && data.devices) {
+                    const maxNodeId = data.devices.reduce((max, device) => 
+                        Math.max(max, device.node_id), 0);
+                    document.getElementById('node_id').value = maxNodeId + 1;
+                }
+            } catch (error) {
+                // Silent fail, user can enter manually
+            }
+        });
+    </script>
+</body>
+</html>
