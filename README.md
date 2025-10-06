@@ -2,6 +2,10 @@
 
 This is paring helper and simple management UI tool to be used with matter2mqtt router. Tool offers pairing via camera or manually adding metter device code, this information is them updated to devices.yaml, same what matter2mqtt uses. And devices should appear on UI when paired.
 
+> **Status: Work in Progress**
+>
+> This project is under active development and is not yet production-ready. Breaking changes and incomplete features are expected. Contributions and feedback are welcome!
+
 # Quick Start
 
 Start the pairing tool (HTTP, no TLS):
