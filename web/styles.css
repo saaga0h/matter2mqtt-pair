@@ -63,7 +63,10 @@ body.light {
   --danger: oklch(0.5 0.05 30);
   --warning: oklch(0.5 0.05 100);
   --success: oklch(0.5 0.05 160);
-    --info: oklch(0.5 0.14 260);
+  --info: oklch(0.5 0.14 260);
+  --gradient: linear-gradient(0deg, var(--bg) 97%, var(--bg-light));
+  --gradient-hover:linear-gradient(0deg, var(--bg), var(--bg-light));
+  --shadow: 0px 2px 2px oklch(0 0 0 / 0.2), 0px 4px 4px oklch(0 0 0 / 0.1)
 }
 
 /* Dialog Styles */
