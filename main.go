@@ -7,10 +7,12 @@ import (
 	"flag"
 	"fmt"
 	"io/fs"
+	"mime"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -131,14 +133,48 @@ func main() {
 		panic(err)
 	}
 
-	http.Handle("/", http.FileServer(http.FS(webFS)))
+	// API handlers
 	http.HandleFunc("/api/pair", handlePair(finalDevicesPath, *storagePath, *chipToolPath))
 	http.HandleFunc("/api/unpair", handleUnpair(finalDevicesPath, *storagePath, *chipToolPath))
 	http.HandleFunc("/api/devices", handleListDevices(finalDevicesPath))
 
-	addr := fmt.Sprintf(":%d", finalPort)
+	// SPA/static handler
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// Try to serve static files first
+		path := r.URL.Path
+		if path == "/" {
+			path = "/index.html"
+		}
+
+		// Try to open the file from embedded filesystem
+		if file, err := webFS.Open(strings.TrimPrefix(path, "/")); err == nil {
+			defer file.Close()
+			// Read the file content
+			if content, err := fs.ReadFile(webFS, strings.TrimPrefix(path, "/")); err == nil {
+				// Determine content type based on file extension
+				ext := filepath.Ext(path)
+				contentType := mime.TypeByExtension(ext)
+				if contentType == "" {
+					// Fallback to detection if extension doesn't work
+					contentType = http.DetectContentType(content)
+				}
+				w.Header().Set("Content-Type", contentType)
+				w.Write(content)
+				return
+			}
+		}
+
+		// Fallback: serve index.html for SPA routes
+		if content, err := fs.ReadFile(webFS, "index.html"); err == nil {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Write(content)
+		} else {
+			http.Error(w, "index.html not found", 500)
+		}
+	})
+
 	localIP := getLocalIP()
-	addr = fmt.Sprintf("%s:%d", localIP, finalPort)
+	addr := fmt.Sprintf("%s:%d", localIP, finalPort)
 
 	if finalUseTLS {
 		url := fmt.Sprintf("https://%s", addr)

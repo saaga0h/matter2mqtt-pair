@@ -2,6 +2,7 @@ import { tap, map, catchError, finalize } from 'rxjs/operators';
 import { of, timer } from 'rxjs';
 import * as api from '../api.js';
 import { addNotification } from './notifications.transforms.js';
+import { navigate } from '../core/router.js';
 
 /**
  * Pure pair transforms for device pairing
@@ -22,9 +23,9 @@ export const pairDevice = (formState$, notifications$, deviceData) => {
       if (response.status === 'success') {
         addNotification(notifications$, 'success', response.message || 'Device paired successfully!');
         
-        // Redirect to main page after success
+        // Navigate back to home page after success
         timer(2000).subscribe(() => {
-          window.location.href = 'index.html';
+          navigate('/');
         });
       } else {
         addNotification(notifications$, 'error', response.message || 'Failed to pair device');

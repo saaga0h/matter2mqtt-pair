@@ -6,8 +6,9 @@
     <title>matter2mqtt - Matter Device Management</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="pair.css">
     <link rel="stylesheet" href="components/notification/notification.component.css">
-    
+    <link rel="stylesheet" href="components/header/header.component.css">
     <!-- Import map for RxJS modules -->
     <script type="importmap">
     {
@@ -19,182 +20,19 @@
     </script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>matter2mqtt</h1>
-            <p class="subtitle">Device Management</p>
-            <button class="toggle-button" onclick="toggleMode()">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9" />
-                </svg>
-            </button>
-        </header>
-
-        <div id="status-message" class="status-message"></div>
-
-        <div id="actions-container"></div>
-
-        <div id="devices-container" class="loading">
-            Loading devices...
-        </div>
-        
-        <!-- Notifications will be rendered here -->
-        <div id="notifications-container"></div>
-    </div>
-
-    <!-- 
-    Old inline script - commented out in favor of RxJS reactive system
-    <script>
-        let currentUnpairDevice = null;
-        function toggleMode() {
-            document.body.classList.toggle('light');
-        }
-        async function loadDevices() {
-            const container = document.getElementById('devices-container');
-            container.className = 'loading';
-            container.textContent = 'Loading devices...';
-
-            try {
-                const response = await fetch('/api/devices');
-                const data = await response.json();
-
-                if (data.status === 'success') {
-                    renderDevices(data.devices);
-                } else {
-                    showError('Failed to load devices: ' + data.message);
-                }
-            } catch (error) {
-                showError('Failed to connect to server: ' + error.message);
-            }
-        }
-
-        function renderDevices(devices) {
-            const container = document.getElementById('devices-container');
-
-            if (!devices || devices.length === 0) {
-                container.className = 'empty-state';
-                container.innerHTML = `
-                    <h2>No Devices Yet</h2>
-                    <p>Pair your first Matter device to get started</p>
-                    <button class="primary" onclick="location.href='pair.html'" style="margin-top: 1rem;">
-                        + Pair New Device
-                    </button>
-                `;
-                return;
-            }
-
-            container.className = 'devices-grid';
-            container.innerHTML = devices.map(device => `
-                <div class="device-card">
-                    <div class="device-header">
-                        <div class="device-topic">${escapeHtml(device.topic)}</div>
-                        <div class="device-node">Node ${device.node_id}</div>
-                    </div>
-                    <div class="device-details">
-                        ${device.sensitivity ? `
-                            <div class="device-detail">
-                                <span class="detail-label">Sensitivity</span>
-                                <span class="detail-value">${escapeHtml(device.sensitivity)}</span>
-                            </div>
-                        ` : ''}
-                        ${device.debounce_ms ? `
-                            <div class="device-detail">
-                                <span class="detail-label">Debounce</span>
-                                <span class="detail-value">${device.debounce_ms}ms</span>
-                            </div>
-                        ` : ''}
-                    </div>
-                    <div class="device-actions">
-                        <button onclick="editDevice(${device.node_id})">Edit</button>
-                        <button class="danger" onclick="unpairDevice(${device.node_id}, '${escapeHtml(device.topic)}')">Unpair</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function unpairDevice(nodeId, topic) {
-            currentUnpairDevice = { nodeId, topic };
-            document.getElementById('unpair-device-name').textContent = topic;
-            document.getElementById('unpair-modal').classList.add('show');
-        }
-
-        function closeUnpairModal() {
-            document.getElementById('unpair-modal').classList.remove('show');
-            currentUnpairDevice = null;
-        }
-
-        async function confirmUnpair() {
-            if (!currentUnpairDevice) return;
-
-            const { nodeId, topic } = currentUnpairDevice;
-            closeUnpairModal();
-
-            try {
-                const response = await fetch('/api/unpair', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ node_id: nodeId })
-                });
-
-                const data = await response.json();
-
-                if (data.status === 'success') {
-                    showSuccess(`Device "${topic}" unpaired successfully. Restart matter2mqtt to apply changes.`);
-                    loadDevices();
-                } else {
-                    showError('Failed to unpair device: ' + data.message);
-                }
-            } catch (error) {
-                showError('Failed to unpair device: ' + error.message);
-            }
-        }
-
-        function editDevice(nodeId) {
-            // TODO: Implement device editing
-            showInfo('Device editing coming soon!');
-        }
-
-        function showSuccess(message) {
-            showMessage(message, 'success');
-        }
-
-        function showError(message) {
-            showMessage(message, 'error');
-        }
-
-        function showInfo(message) {
-            showMessage(message, 'success');
-        }
-
-        function showMessage(message, type) {
-            const messageEl = document.getElementById('status-message');
-            messageEl.textContent = message;
-            messageEl.className = `status-message ${type} show`;
-            
-            setTimeout(() => {
-                messageEl.classList.remove('show');
-            }, 5000);
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Load devices on page load
-        loadDevices();
-    </script>
-    -->
+    <!-- Common header for all pages -->
+    <div id="header-container"></div>
     
-    <!-- Global functions still needed by inline onclick handlers -->
-    <script>
-        function toggleMode() {
-            document.body.classList.toggle('light');
-        }
-    </script>
+    <!-- Main app container - all routes will be rendered here -->
+    <div id="app"></div>
     
-    <!-- New RxJS reactive system -->
-    <script type="module" src="index.js"></script>
+    <!-- Notifications will be rendered here -->
+    <div id="notifications-container"></div>
+
+    <!-- External dependencies -->
+    <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
+    
+    <!-- Main SPA application -->
+    <script type="module" src="app.js"></script>
 </body>
 </html>
