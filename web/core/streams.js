@@ -1,4 +1,4 @@
-import { from, fromEvent, map, tap } from "rxjs";
+import { from, fromEvent, map, tap, of } from "rxjs";
 import { select } from "./dom.js";
 
 export const fromSubmit = (selector) =>
@@ -7,6 +7,13 @@ export const fromSubmit = (selector) =>
     map((e) => new FormData(e.target)),
     map((formData) => Object.fromEntries(formData))
   );
+
+// Helper for handling submit events that are already captured
+export const submitHelper = (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  return of(Object.fromEntries(formData));
+};
 
 export const fromClick = (selector) => fromEvent(select(selector), "click");
 

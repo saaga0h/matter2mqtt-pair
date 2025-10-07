@@ -62,24 +62,3 @@ export const pairDevice = (formState$, notifications$, deviceData) => {
     map((response) => response)
   );
 };
-
-export const validatePairForm = (formData) => {
-  const errors = [];
-  
-  if (!formData.code || !formData.code.trim()) {
-    errors.push('Pairing code is required');
-  }
-  
-  if (!formData.name || !formData.name.trim()) {
-    errors.push('Device name/topic is required');
-  }
-  
-  if (!formData.node_id || formData.node_id < 1) {
-    errors.push('Valid node ID is required');
-  }
-  
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
-};

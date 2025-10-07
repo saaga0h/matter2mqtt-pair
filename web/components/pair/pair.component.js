@@ -1,10 +1,78 @@
 import { of } from 'rxjs';
-import { pairDevice, validatePairForm } from '../../tranforms/pair.transforms.js';
+import { switchMap, catchError, map } from 'rxjs/operators';
+import { pairDevice } from '../../tranforms/pair.transforms.js';
+import { submitHelper } from '../../core/streams.js';
+import { createValidator, required, integer, min } from '../../core/validation.js';
 import { addNotification } from '../../tranforms/notifications.transforms.js';
 import { escapeHtml } from '../../utils.js';
 
 export const pairComponent = (formState, context) => {
   const { code, name, node_id, isSubmitting } = formState;
+
+  // Create field validators as RxJS operators that collect errors instead of throwing immediately
+  const validateCode = () => (source) => source.pipe(
+    map(formData => {
+      const validator = createValidator(formData.code).pipe(required('Pairing code is required'));
+      const result = validator.getResult();
+      
+      return {
+        ...formData,
+        _validationErrors: [
+          ...(formData._validationErrors || []),
+          ...(result.valid ? [] : Object.values(result.errors).filter(Boolean))
+        ]
+      };
+    })
+  );
+
+  const validateName = () => (source) => source.pipe(
+    map(formData => {
+      const validator = createValidator(formData.name).pipe(required('Device name/topic is required'));
+      const result = validator.getResult();
+      
+      return {
+        ...formData,
+        _validationErrors: [
+          ...(formData._validationErrors || []),
+          ...(result.valid ? [] : Object.values(result.errors).filter(Boolean))
+        ]
+      };
+    })
+  );
+
+  const validateNodeId = () => (source) => source.pipe(
+    map(formData => {
+      const validator = createValidator(formData.node_id).pipe(
+        required('Node ID is required'),
+        integer('Node ID must be a valid number'),
+        min(1, 'Node ID must be greater than 0')
+      );
+      const result = validator.getResult();
+      
+      return {
+        ...formData,
+        _validationErrors: [
+          ...(formData._validationErrors || []),
+          ...(result.valid ? [] : Object.values(result.errors).filter(Boolean))
+        ]
+      };
+    })
+  );
+
+  // Final validation check that throws if any errors accumulated
+  const checkValidation = () => (source) => source.pipe(
+    map(formData => {
+      const errors = formData._validationErrors || [];
+      
+      if (errors.length > 0) {
+        throw { type: 'validation', errors };
+      }
+      
+      // Remove validation errors from formData before proceeding
+      const { _validationErrors, ...cleanFormData } = formData;
+      return cleanFormData;
+    })
+  );
 
   return {
     html: `
@@ -19,7 +87,6 @@ export const pairComponent = (formState, context) => {
               name="code" 
               placeholder="MT:Y.K9042C00KA0648G00" 
               value="${escapeHtml(code || '')}"
-              required
               ${isSubmitting ? 'disabled' : ''}
             >
             <p class="help-text">
@@ -35,7 +102,6 @@ export const pairComponent = (formState, context) => {
               name="name" 
               placeholder="motion/living-room" 
               value="${escapeHtml(name || '')}"
-              required
               ${isSubmitting ? 'disabled' : ''}
             >
             <p class="help-text">
@@ -50,9 +116,7 @@ export const pairComponent = (formState, context) => {
               id="node_id" 
               name="node_id" 
               placeholder="1" 
-              min="1" 
               value="${node_id || ''}"
-              required
               ${isSubmitting ? 'disabled' : ''}
             >
             <p class="help-text">
@@ -60,7 +124,7 @@ export const pairComponent = (formState, context) => {
             </p>
           </div>
 
-          <button type="submit" class="primary" data-action="submit-form" ${isSubmitting ? 'disabled' : ''}>
+          <button type="submit" class="primary" ${isSubmitting ? 'disabled' : ''}>
             ${isSubmitting ? 'Pairing...' : 'Pair Device'}
           </button>
         </form>
@@ -68,33 +132,33 @@ export const pairComponent = (formState, context) => {
     `,
     on: {
       '[data-form="pair-form"]:submit': (e) => {
-        e.preventDefault();
-        
-        const formData = new FormData(e.target);
-        const deviceData = {
-          code: formData.get('code').trim(),
-          name: formData.get('name').trim(),
-          node_id: parseInt(formData.get('node_id')) || null
-        };
-        
-        const validation = validatePairForm(deviceData);
-        
-        if (!validation.isValid) {
-          validation.errors.forEach(error => {
-            addNotification(context.notifications$, 'error', error);
-          });
-          return;
-        }
-        
-        // Subscribe to the observable to make it execute
-        pairDevice(context.formState$, context.notifications$, deviceData).subscribe({
-          next: (result) => {
-            console.log('Pair result:', result);
-          },
-          error: (error) => {
-            console.error('Pair subscription error:', error);
-          }
-        });
+        // Use submitHelper to handle form data extraction and preventDefault
+        return submitHelper(e).pipe(
+          validateCode(),
+          validateName(),
+          validateNodeId(),
+          checkValidation(), // Throws if any validation errors accumulated
+          switchMap(validatedFormData => {
+            // All validation passed - proceed with pairing
+            return pairDevice(context.formState$, context.notifications$, validatedFormData);
+          }),
+          
+          // Handle validation errors reactively
+          catchError(error => {
+            if (error.type === 'validation') {
+              // Show validation errors through notification system
+              error.errors.forEach(errorMsg => {
+                addNotification(context.notifications$, 'error', errorMsg);
+              });
+            } else {
+              // Handle other errors
+              addNotification(context.notifications$, 'error', 'An unexpected error occurred');
+            }
+            
+            // Return empty observable to complete the stream
+            return of(null);
+          })
+        );
       }
     }
   };
