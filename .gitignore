@@ -45,3 +45,6 @@ devices.yaml
 *.db
 tmp/
 .DS_Store
+
+# Certs
+*.pem
