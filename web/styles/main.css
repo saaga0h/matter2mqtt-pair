@@ -1,10 +1,6 @@
 /* Base styles and colors */
 @import './colors.css';
 @import './global.css';
-@import '../styles.css';
-
-/* Page styles */
-@import '../index.css';
 
 /* Dialog styles */
 @import './dialog.css';
@@ -19,5 +15,5 @@
 @import '../components/pair/pair.component.css';
 
 /* Page component styles */
-@import '../components/pages/home.component.css';
-@import '../components/pages/pair.component.css';
+@import '../components/pages/home-page.component.css';
+@import '../components/pages/pair-page.component.css';
