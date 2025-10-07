@@ -1,0 +1,24 @@
+/* Pair Component Styles */
+
+#video {
+    width: 100%;
+    border-radius: 4px;
+    background: #000;
+    margin-bottom: 1rem;
+}
+
+.camera-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.camera-controls button {
+    flex: 1;
+}
+
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+}

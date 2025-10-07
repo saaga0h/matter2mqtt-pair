@@ -8,11 +8,7 @@ export const pairPageComponent = (state, context) => {
     html: `
       <div class="container">
         <div id="status-message" class="status-message"></div>
-
-        <!-- QR Code Scanner Section -->
         <div id="qr-scanner-container"></div>
-
-        <!-- Manual Entry Section -->
         <div id="pair-form-container"></div>
       </div>
     `,

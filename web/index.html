@@ -4,11 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>matter2mqtt - Matter Device Management</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="index.css">
-    <link rel="stylesheet" href="pair.css">
-    <link rel="stylesheet" href="components/notification/notification.component.css">
-    <link rel="stylesheet" href="components/header/header.component.css">
+    <link rel="stylesheet" href="styles/main.css">
     <!-- Import map for RxJS modules -->
     <script type="importmap">
     {
@@ -20,19 +16,13 @@
     </script>
 </head>
 <body>
-    <!-- Common header for all pages -->
     <div id="header-container"></div>
     
-    <!-- Main app container - all routes will be rendered here -->
     <div id="app"></div>
     
-    <!-- Notifications will be rendered here -->
     <div id="notifications-container"></div>
 
-    <!-- External dependencies -->
     <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
-    
-    <!-- Main SPA application -->
     <script type="module" src="app.js"></script>
 </body>
 </html>

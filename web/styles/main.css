@@ -1,0 +1,23 @@
+/* Base styles and colors */
+@import './colors.css';
+@import './global.css';
+@import '../styles.css';
+
+/* Page styles */
+@import '../index.css';
+
+/* Dialog styles */
+@import './dialog.css';
+
+/* Component styles */
+@import '../components/breadcrumb/breadcrumb.component.css';
+@import '../components/header/header.component.css';
+@import '../components/button/button.component.css';
+@import '../components/device/device.component.css';
+@import '../components/device-list/device-list.component.css';
+@import '../components/notification/notification.component.css';
+@import '../components/pair/pair.component.css';
+
+/* Page component styles */
+@import '../components/pages/home.component.css';
+@import '../components/pages/pair.component.css';
